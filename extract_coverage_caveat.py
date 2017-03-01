@@ -29,12 +29,15 @@ def extract_qc_call(coverage_table,
 
     # Retrieve coverage at lowest observed coverage that has coverage
     # > high_thresh_fraction of the data:
-    obs_cov_high_thresh = coverage_table.loc[coverage_table["cum_fraction"] < 1 - high_thresh_fraction, 0].iloc[0]
+    max_percent_data_under_high_thresh = 1 - high_thresh_fraction
+    max_percent_data_under_low_thresh = 1 - low_thresh_fraction
+
+    obs_cov_high_thresh = coverage_table.loc[coverage_table["cum_fraction"] >= max_percent_data_under_high_thresh, 0].iloc[0]
     if obs_cov_high_thresh > high_thresh_fold_cov:
         return "OK"
 
-    obs_cov_low_thresh = coverage_table.loc[coverage_table["cum_fraction"] < 1 - low_thresh_fraction, 0].iloc[0]
-    if obs_cov_low_thresh > low_thresh_fold_cov:
+    obs_cov_high_thresh = coverage_table.loc[coverage_table["cum_fraction"] >= max_percent_data_under_low_thresh, 0].iloc[0]
+    if obs_cov_high_thresh > low_thresh_fold_cov:
         return "WARN"
 
     else:
