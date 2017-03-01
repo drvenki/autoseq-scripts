@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import click, logging, pdb, sys
+import click, logging, sys
 import pandas as pd
 
 
