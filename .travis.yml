@@ -6,7 +6,7 @@ python:
 install:
 - pip install coveralls
 - pip install pytest-cov
-- pip install pandas
+- conda install pandas
 - pip install mock==2.0
 
 script:
