@@ -4,6 +4,8 @@ python:
 - 2.7
 
 install:
+- wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
+- bash Miniconda-latest-Linux-x86_64.sh -b -p /nfs/ALASCCA/miniconda2
 - pip install coveralls
 - pip install pytest-cov
 - conda install pandas
