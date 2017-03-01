@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import click, logging, pdb, sys
+import click, logging, sys
 
 
 def extract_qc_call(contest_output_file, max_contam):

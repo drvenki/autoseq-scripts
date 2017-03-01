@@ -15,6 +15,7 @@ before_install:
 
 install:
 - pip install coveralls
+- pip install click
 - pip install pytest-cov
 - conda install pandas
 - pip install mock==2.0
