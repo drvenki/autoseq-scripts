@@ -53,9 +53,9 @@ def write_qc_json(output_file, qc_call):
 
 @click.command()
 @click.option('--high-thresh-fraction', default=0.95, help='Upper threshold, fraction requirement')
-@click.option('--high-thresh-fold_cov', default=100, help='Upper threshold, fold coverage requirement')
+@click.option('--high-thresh-fold-cov', default=100, help='Upper threshold, fold coverage requirement')
 @click.option('--low-thresh-fraction', default=0.95, help='Low threshold, fraction requirement')
-@click.option('--low-thresh-fold_cov', default=50, help='Low threshold, fold coverage requirement')
+@click.option('--low-thresh-fold-cov', default=50, help='Low threshold, fold coverage requirement')
 @click.argument('coverage-histogram')
 def main(coverage_histogram, high_thresh_fraction, high_thresh_fold_cov,
          low_thresh_fraction, low_thresh_fold_cov):
