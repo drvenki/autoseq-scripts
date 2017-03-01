@@ -3,9 +3,17 @@ language: python
 python:
 - 2.7
 
-install:
+before_install:
+- CONDA_INST=$HOME/miniconda2
+- echo -n "Downloading conda..."
 - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
-- bash Miniconda-latest-Linux-x86_64.sh -b -p ~/miniconda2
+- echo "Done!"
+- bash Miniconda-latest-Linux-x86_64.sh -b -p $CONDA_INST -f
+- export PATH=$CONDA_INST/bin:$PATH
+- conda config --set always_yes yes --set changeps1 no
+- conda info -a
+
+install:
 - pip install coveralls
 - pip install pytest-cov
 - conda install pandas
