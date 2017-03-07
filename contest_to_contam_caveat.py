@@ -3,11 +3,17 @@ import click, logging, sys
 
 
 def extract_qc_call(contest_output_file, max_contam):
-    # Ignore header:
-    contest_output_file.readline()
+    all_lines = contest_output_file.readlines()
+
+    # If there are not exactly two lines in the output, then report failure:
+    if len(all_lines) != 2:
+        raise ValueError("Invalid contest output file for QC call extraction")
+
+    # Obtain the last line in the file:
+    data_line = all_lines[-1]
 
     # Extract the fourth field:
-    contam_estimate = float(contest_output_file.readline().strip().split()[3])
+    contam_estimate = float(data_line.strip().split()[3])
 
     # Return QC call based on this estimate and the max acceptable contamination:
     if contam_estimate > max_contam:
