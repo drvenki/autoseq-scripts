@@ -1,19 +1,16 @@
 #!/usr/bin/env python
 import click, logging, sys
-
+import pandas as pd
 
 def extract_qc_call(contest_output_file, max_contam):
-    all_lines = contest_output_file.readlines()
-
-    # If there are not exactly two lines in the output, then report failure:
-    if len(all_lines) != 2:
-        raise ValueError("Invalid contest output file for QC call extraction")
-
-    # Obtain the last line in the file:
-    data_line = all_lines[-1]
+    contest_table = pd.read_csv(contest_output_file, comment="W", sep="\t", header=0)
+    # FIXME: The logic here is not completely sound, and using pandas with "W" comment character is a hack.
+    if len(contest_table) == 0:
+        # Will assume that no data in the coverage histogram indicates no evidence of contamination:
+        return "OK"
 
     # Extract the fourth field:
-    contam_estimate = float(data_line.strip().split()[3])
+    contam_estimate = contest_table.iloc[0, 3]
 
     # Return QC call based on this estimate and the max acceptable contamination:
     if contam_estimate > max_contam:

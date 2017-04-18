@@ -3,7 +3,7 @@ import click, logging, sys
 import pandas as pd
 
 
-def extract_qc_call(coverage_table,
+def extract_qc_call(coverage_histogram_file,
                     high_thresh_fraction,
                     high_thresh_fold_cov,
                     low_thresh_fraction,
@@ -23,6 +23,12 @@ def extract_qc_call(coverage_table,
     :param low_thresh_fold_cov: Lower threshold fold change requirement
     :return:
     '''
+
+    try:
+        coverage_table = pd.read_csv(coverage_histogram_file, comment="#", sep="\t", header=None)
+    except pd.io.common.EmptyDataError, e:
+        # Will assume that no data in the coverage histogram indicates no coverage:
+        return "FAIL"
 
     cum_fraction = coverage_table.cumsum(0)[3]
     coverage_table["cum_fraction"] = cum_fraction
@@ -68,8 +74,8 @@ Example output contents: {"CALL": "OK"}
     numeric_level = getattr(logging, "INFO", None)
     logging.basicConfig(level=numeric_level)
 
-    coverage_table = pd.read_csv(coverage_histogram, comment="#", sep="\t", header=None)
-    qc_call = extract_qc_call(coverage_table,
+    coverage_histogram_file = open(coverage_histogram)
+    qc_call = extract_qc_call(coverage_histogram_file,
                               high_thresh_fraction,
                               high_thresh_fold_cov,
                               low_thresh_fraction,
