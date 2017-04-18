@@ -68,3 +68,14 @@ class TestMethods(unittest.TestCase):
         with patch('extract_coverage_caveat.extract_qc_call.open',
                    mock_open(read_data=test_data), create=True) as test_input_file:
             self.assertEquals(extract_qc_call(test_input_file.return_value, 0.95, 100, 0.95, 50), "FAIL")
+
+    def test_extract_coverage_empty_file(self):
+        test_data = \
+"""
+# target_coverage_histogram, bam: path.bam
+# coverage\tbases_at_coverage\ttotal_bases\tfraction_bases_at_coverage
+"""
+
+        with patch('extract_coverage_caveat.extract_qc_call.open',
+                   mock_open(read_data=test_data), create=True) as test_input_file:
+            self.assertEquals(extract_qc_call(test_input_file.return_value, 0.95, 100, 0.95, 50), "FAIL")
