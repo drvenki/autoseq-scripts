@@ -1,7 +1,61 @@
 #!/usr/bin/env python
-import click, logging, StringIO, sys
+import click, logging, gzip, re, sys
+import pandas as pd
 import pybedtools
-import vcf
+
+
+def extract_allele_counts(vcf_fields):
+    allele_freq_info_str = vcf_fields[7].split("|")[0]
+    allele_freq_info_tups = [tuple(elem.split("=")) for elem in allele_freq_info_str.split(";")]
+    allele_freq_info = dict(filter(lambda tup: len(tup) == 2, allele_freq_info_tups))
+    alt_allele_count = float(re.match("[0-9]+", allele_freq_info["AC"]).group())
+    total_allele_number = float(re.match("[0-9]+", allele_freq_info["AN"]).group())
+    alt_allele_freq = alt_allele_count / total_allele_number
+    return (alt_allele_count, total_allele_number, alt_allele_freq)
+
+
+def write_contest_vcf(vcf_as_df, vcf_header, output_file):
+    print >> output_file, vcf_header.strip()
+    allele_count_tups = pd.DataFrame(list(vcf_as_df.apply(extract_allele_counts, axis = 1)))
+    vcf_with_allele_freq = pd.concat([vcf_as_df.iloc[:,:7], allele_count_tups], axis = 1)
+
+    filter = (vcf_with_allele_freq.iloc[:, 9] > 0.1) & (vcf_with_allele_freq.iloc[:, 9] < 0.9)
+    vcf_filtered = vcf_with_allele_freq.loc[filter,:]
+
+    for index, row in vcf_filtered.iterrows():
+        vcf_fields = list(row)
+        last_elem = "AC=%d;AF=%1.3f;AN=%d;CEU={%s*=%1.3f,%s=%1.3f};set=CEU" % \
+            (vcf_fields[7], vcf_fields[9], vcf_fields[8],
+             vcf_fields[3], vcf_fields[9], vcf_fields[4], 1 - vcf_fields[9])
+        print >> output_file, "%s\t%d\t%s\t%s\t%s\t%1.2f\t%s\t" % tuple(vcf_fields[:7]) + "\t" + last_elem
+
+
+def extract_vcf_header(vcf_file):
+    '''Extract the header from the vcf file. Currently, just assumes that the header is
+    within the first 10000 lines of the specified file.'''
+
+    header_str = ""
+    line_idx = 0
+    curr_line = vcf_file.readline()
+    while curr_line != "" and line_idx < 10000:
+        if curr_line[0] == "#":
+            header_str += curr_line
+        curr_line = vcf_file.readline()
+        line_idx += 1
+
+    return header_str
+
+
+def extract_header_unknown_type(vcf_filename):
+    file_extension = vcf_filename.split(".")[-1]
+    if file_extension == "gz":
+        with gzip.open(vcf_filename, 'rb') as vcf_file:
+            return extract_vcf_header(vcf_file)
+    else:
+        if not file_extension == "vcf":
+            raise ValueError("Invalid vcf file extension: " + vcf_filename)
+        with open(vcf_filename) as vcf_file:
+            return extract_vcf_header(vcf_file)
 
 
 @click.command()
@@ -12,8 +66,8 @@ import vcf
 @click.option('--output-filename', default='intersect_snps.vcf', help='Output filename')
 @click.argument('genotype-target-bedfile')
 @click.argument('eval-target-bedfile')
-@click.argument('population-vcffile')
-def main(genotype_target_bedfile, eval_target_bedfile, population_vcffile, output_filename, min_maf, max_maf, tmpdir, loglevel):
+@click.argument('population-vcf')
+def main(genotype_target_bedfile, eval_target_bedfile, population_vcf, output_filename, min_maf, max_maf, tmpdir, loglevel):
     """
 Create the contest VCF input file from the designated "genotype" and "eval" target bed region
 files and population allele frequency VCF file.
@@ -31,33 +85,16 @@ files and population allele frequency VCF file.
 
     # Get the intersection of the resulting BED file with the population VCF file:
     logging.info("Getting population vcf intersection...")
-    pop_vcf = pybedtools.BedTool(population_vcffile)
+    pop_vcf = pybedtools.BedTool(population_vcf)
     vcf_bed_intersect = pop_vcf.intersect(bed_intersection)
     logging.info("Done.")
 
-    # Get a list of VCF strings from the resulting intersection information:
-    # NOTE: Could consume a fair bit of memory if the above bed-vcf filter is not aggressive:
-    logging.info("Preparing output stream...")
+    # Write the VCF records to the output file, the format contest requires:
+    logging.info("Writing vcf file output...")
+    vcf_header = extract_header_unknown_type(population_vcf)
     vcf_bed_intersect_df = vcf_bed_intersect.to_dataframe()
-    vcf_bed_intersect_list = list(\
-        vcf_bed_intersect_df.apply(lambda elems: "\t".join(map(lambda elem: str(elem), elems)), axis=1))
-
-    # Convert to a file-like object to facilitate filtering and output with pyvcf:
-    vcf_bed_intersect_bigstr = "\n".join(vcf_bed_intersect_list)
-    vcf_bed_intersect_filelike = StringIO.StringIO(vcf_bed_intersect_bigstr)
-    logging.info("Done.")
-
-    # Open outfile: FIXME: Improve this:
-    logging.info("Filtering and writing output records...")
-    with open(output_filename, 'w') as output_file, open(population_vcffile) as template_vcf:
-        vcf_header_template = vcf.Reader(template_vcf)
-
-        # Parse using pyvcf and apply filter, by explicit iteration over entries:
-        vcf_bed_intersect_reader = vcf.Reader(vcf_bed_intersect_filelike)
-        vcf_bed_intersect_filtered_writer = vcf.Writer(output_file, vcf_header_template)
-        for record in vcf_bed_intersect_reader:
-            if record.INFO['AF'][0] > min_maf and record.INFO['AF'][0] < max_maf:
-                vcf_bed_intersect_filtered_writer.write_record(record)
+    with open(output_filename, 'w') as output_file:
+        write_contest_vcf(vcf_bed_intersect_df, vcf_header, output_file)
     logging.info("Done.")
 
 
