@@ -27,7 +27,7 @@ def write_contest_vcf(vcf_as_df, vcf_header, output_file):
         last_elem = "AC=%d;AF=%1.3f;AN=%d;CEU={%s*=%1.3f,%s=%1.3f};set=CEU" % \
             (vcf_fields[7], vcf_fields[9], vcf_fields[8],
              vcf_fields[3], vcf_fields[9], vcf_fields[4], 1 - vcf_fields[9])
-        print >> output_file, "%s\t%d\t%s\t%s\t%s\t%1.2f\t%s\t" % tuple(vcf_fields[:7]) + "\t" + last_elem
+        print >> output_file, "%s\t%d\t%s\t%s\t%s\t%1.2f\t%s\t%s" % tuple(vcf_fields[:7] + [last_elem])
 
 
 def extract_vcf_header(vcf_file):
