@@ -442,8 +442,8 @@ if (is.na(pten.loh)) pten.loh=FALSE
 
 # set PTEN call for Json file
 ptencall='NOCALL'
-if (seg.pten.hom.loss|pten.hom.loss) ptencall='HOMLOSS'
 if (pten.loh|pten.loss) ptencall='HETLOSS_or_LOH'
+if (seg.pten.hom.loss|pten.hom.loss) ptencall='HOMLOSS'
 # but if tumor coverage is bad (<min_tcov_to_report_PTEN_cna), report NOCALL regardless:
 if (!is.null(alf)) if (median(alf$td,na.rm=T)<min_tcov_to_report_PTEN_cna) ptencall='NOCALL'
 
@@ -466,25 +466,32 @@ if (writeJson) write(exportJson, opts$json.cna)
 
 
 # purity estimate from mutation allele frequencies
-purity.call='FAIL'; af=NA
-try( {
-  ix=salf$t>=min_AF_to_use_for_purity & salf$t.altreads>=6 # use only min_AF_to_use_for_purity+ mutations. also require 6+ reads.
-  # male X/Y mutations come at higher AF. Exclude from calculation if male:
-  if (sum(alf$chromosome %in% c('X','Y'))<50) ix = ix & !salf$chromosome %in% c('X','Y')
-  af=salf$t[ix]
-  if (length(af)>=min_muts_to_estimate_purity) if (median(af)>=median_AF_req_for_ok_purity) purity.call='OK'
-},silent=T)
+purity.call='OK'; af=NA
 
-# sometimes CNAs may indicate ok purity. if so, it overrules the mutation-based (purity.call).
-## first, require good T coverage ≥100 to consider CNA-based purity
-## second, require at least 2 automsomal segments ≥ 10MB and ≥10% shift in DNA abundance
-## from genome median (equiv to 20% purity and near diploid) (simplified: ±0.2 logratio)
-ix=segments$chromosome %in% as.character(1:22) & segments$end-segments$start >= 10e6 & abs(segments$log2) >= 0.2
+## first, require good T coverage (≥100) to consider calling purity FAIL
 t=0; try( {# median coverage of at least 1000 snps
   if (nrow(alf)>1000)
     t=median(alf$td,na.rm=T)
 }, silent=T)
-# cna purity ok if 2+ segments ≥ ±0.15 and coverage≥100
+
+if (t>=100) try( { # if ok coverage call FAIL if
+  ix=salf$t>=min_AF_to_use_for_purity & salf$t.altreads>=6 # use only min_AF_to_use_for_purity+ mutations. also require 6+ reads.
+  if (sum(alf$chromosome %in% c('X','Y'))<50) ix = ix & !salf$chromosome %in% c('X','Y') # male X/Y mutations come at higher AF, so exclude from calculation if male
+  
+  
+  af=salf$t[ix]
+  if (length(af)>=min_muts_to_estimate_purity) {
+    if (median(af) < median_AF_req_for_ok_purity) {
+      purity.call='FAIL' # will call fail if AF is too low
+    }
+  } else purity.call='FAIL' # and will call fail if the number of muts is too low
+},silent=T)
+
+# sometimes CNAs may also indicate ok purity. if OK let it overrule the mutation-based (purity.call).
+## first, require at least 2 automsomal segments ≥ 10MB and ≥10% shift in DNA abundance
+##-from genome median (equiv to 20% purity and near diploid) (simplified: ±0.2 logratio)
+ix=segments$chromosome %in% as.character(1:22) & segments$end-segments$start >= 10e6 & abs(segments$log2) >= 0.2
+# cna purity ok if 2+ segments ≥ ±0.15 (and coverage≥100)
 cna.purity='LOW/NA'; if (sum(ix)>=2 & t>=100) { 
   cna.purity='OK'
   purity.call='OK'
