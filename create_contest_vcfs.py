@@ -15,9 +15,13 @@ def extract_allele_counts(vcf_fields):
 
 
 def write_contest_vcf(vcf_as_df, vcf_header, output_file):
+    vcf_idx_reset = vcf_as_df.reset_index(drop=True)
     print >> output_file, vcf_header.strip()
-    allele_count_tups = pd.DataFrame(list(vcf_as_df.apply(extract_allele_counts, axis = 1)))
-    vcf_with_allele_freq = pd.concat([vcf_as_df.iloc[:,:7], allele_count_tups], axis = 1)
+    allele_count_tups = pd.DataFrame(list(vcf_idx_reset.apply(extract_allele_counts, axis = 1)))
+    vcf_with_allele_freq = vcf_idx_reset.iloc[:,:7]
+    vcf_with_allele_freq["alt_count"] = allele_count_tups[0]
+    vcf_with_allele_freq["total_count"] = allele_count_tups[1]
+    vcf_with_allele_freq["alt_freq"] = allele_count_tups[2]
 
     filter = (vcf_with_allele_freq.iloc[:, 9] > 0.1) & (vcf_with_allele_freq.iloc[:, 9] < 0.9)
     vcf_filtered = vcf_with_allele_freq.loc[filter,:]
@@ -26,7 +30,7 @@ def write_contest_vcf(vcf_as_df, vcf_header, output_file):
         vcf_fields = list(row)
         last_elem = "AC=%d;AF=%1.3f;AN=%d;CEU={%s*=%1.3f,%s=%1.3f};set=CEU" % \
             (vcf_fields[7], vcf_fields[9], vcf_fields[8],
-             vcf_fields[3], vcf_fields[9], vcf_fields[4], 1 - vcf_fields[9])
+             vcf_fields[4], vcf_fields[9], vcf_fields[5], 1 - vcf_fields[9])
         print >> output_file, "%s\t%d\t%s\t%s\t%s\t%1.2f\t%s\t%s" % tuple(vcf_fields[:7] + [last_elem])
 
 
@@ -93,8 +97,14 @@ files and population allele frequency VCF file.
     logging.info("Writing vcf file output...")
     vcf_header = extract_header_unknown_type(population_vcf)
     vcf_bed_intersect_df = vcf_bed_intersect.to_dataframe()
+
+    # Filter the VCF DF to exclude unwanted SNP types:
+    snp_filt = vcf_bed_intersect_df.iloc[:, 3].str.contains("[ACGT]") & \
+               vcf_bed_intersect_df.iloc[:, 4].str.contains("[ACGT]")
+    vcf_filtered = vcf_bed_intersect_df.loc[snp_filt]
+
     with open(output_filename, 'w') as output_file:
-        write_contest_vcf(vcf_bed_intersect_df, vcf_header, output_file)
+        write_contest_vcf(vcf_filtered, vcf_header, output_file)
     logging.info("Done.")
 
 
