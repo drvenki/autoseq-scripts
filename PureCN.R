@@ -78,7 +78,9 @@ option_list <- list(
     make_option(c("-v", "--version"), action="store_true", default=FALSE, 
         help="Print PureCN version"),
     make_option(c("-f", "--force"), action="store_true", default=FALSE, 
-        help="Overwrite existing files")
+        help="Overwrite existing files"),
+    make_option(c("--hzdev"), action="store", type="double", default=0.1,
+        help="Allowed AF deviation from 0.5 for heterozygous SNPs in the normal [default %default]")
 )
 
 opt <- parse_args(OptionParser(option_list=option_list))
@@ -130,6 +132,7 @@ normalizePath(dirname(out), mustWork=TRUE)
 
 flog.info("Loading PureCN...")
 suppressPackageStartupMessages(library(PureCN))
+trace(PureCN:::.testGermline, tracer = substitute(if (allowed != hzDev) allowed <- hzDev, list(hzDev = opt$hzdev)), print = FALSE)  # set allowed deviation from AF=0.5 for heterozygous SNPs in normals 
 library(futile.logger)
 
 debug <- FALSE
