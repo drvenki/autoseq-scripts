@@ -79,6 +79,9 @@ option_list <- list(
         help="Print PureCN version"),
     make_option(c("-f", "--force"), action="store_true", default=FALSE, 
         help="Overwrite existing files"),
+    make_option(c("--segfilesdev"), action="store", type="double", 
+        default=formals(PureCN::runAbsoluteCN)$seg.file.sdev,
+        help="If segfile provided, the log-ratio st dev, used to model likelihood of sub-clonal copy number events [default %default]"),
     make_option(c("--hzdev"), action="store", type="double", default=0.1,
         help="Allowed AF deviation from 0.5 for heterozygous SNPs in the normal [default %default]")
 )
@@ -210,6 +213,7 @@ if (file.exists(file.rds) && !opt$force) {
             max.segments=opt$maxsegments,
             error=opt$error, 
             log.ratio.calibration=opt$logratiocalibration,
+            seg.file.sdev=opt$segfilesdev,
             post.optimize=opt$postoptimize)
     dev.off()
     saveRDS(ret, file=file.rds)
