@@ -136,6 +136,7 @@ normalizePath(dirname(out), mustWork=TRUE)
 flog.info("Loading PureCN...")
 suppressPackageStartupMessages(library(PureCN))
 trace(PureCN:::.testGermline, tracer = substitute(if (allowed != hzDev) allowed <- hzDev, list(hzDev = opt$hzdev)), print = FALSE)  # set allowed deviation from AF=0.5 for heterozygous SNPs in normals 
+trace(runAbsoluteCN, tracer = quote(if (sampleid %in% samples(header(vcf))) tumor.id.in.vcf <- sampleid), at = list(c(40,3,8)), print = FALSE)  # fix so that if the sample id exists among the vcf sample names, that sample is used as tumor id in vcf, regardless of which sample in vcf was deemed tumor by PureCN internal functions
 library(futile.logger)
 
 debug <- FALSE
