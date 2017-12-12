@@ -14,9 +14,9 @@ def calc_new_log2(segments_row, bins=None):
 
 
 @click.command()
-@click.option('--input-cnr', type=click.Path(exists=True), help='Input cnr file')
-@click.option('--input-cns', type=click.Path(exists=True), help='Input cns file')
-@click.option('--input-reference', type=click.Path(exists=True), help='Input reference file, for generating fixed cns and cnr files')
+@click.option('--input-cnr', type=click.Path(exists=True), help='Input cnr file', required=True)
+@click.option('--input-cns', type=click.Path(exists=True), help='Input cns file', required=True)
+@click.option('--input-reference', type=click.Path(exists=True), help='Input reference file, for generating fixed cns and cnr files', required=True)
 @click.option('--output-cnr', default='CNVkit_fixed.cnr', help='Output cnr file')
 @click.option('--output-cns', default='CNVkit_fixed.cns', help='Output cns file')
 def main(input_cnr, input_cns, input_reference, output_cnr, output_cns):
