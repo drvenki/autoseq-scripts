@@ -30,7 +30,7 @@ def write_contest_vcf(vcf_as_df, vcf_header, output_file):
         vcf_fields = list(row)
         last_elem = "AC=%d;AF=%1.3f;AN=%d;CEU={%s*=%1.3f,%s=%1.3f};set=CEU" % \
             (vcf_fields[7], vcf_fields[9], vcf_fields[8],
-             vcf_fields[4], vcf_fields[9], vcf_fields[5], 1 - vcf_fields[9])
+             vcf_fields[3], vcf_fields[9], vcf_fields[4], 1 - vcf_fields[9])
         print >> output_file, "%s\t%d\t%s\t%s\t%s\t%1.2f\t%s\t%s" % tuple(vcf_fields[:7] + [last_elem])
 
 
