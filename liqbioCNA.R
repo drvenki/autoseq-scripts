@@ -469,7 +469,7 @@ for (g in c("APC", "ATM", "BRCA1", "BRCA2", "CCND1", "CDK12", "CDKN1B",
             "PMS2", "PPP2R2A", "PTEN", "RB1", "TMPRSS2", "TP53", "ZBTB16")) {
   t=purecn_genes[purecn_genes$gene.symbol==g,] 
   if (nrow(t)>0){
-    if (t$loh) cn_calls[g]='LOSS_OF_HETEROZYGOSITY'
+    if (isTRUE(t$loh)) cn_calls[g]='LOSS_OF_HETEROZYGOSITY'
     if (t$focal & t$C==1) cn_calls[g]='FOCAL_DELETION'
     if (t$C==0) cn_calls[g]='HOMOZYGOUS_DELETION'
   }
